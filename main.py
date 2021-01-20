@@ -10,7 +10,9 @@ YELLOW = (255, 255, 0)
 SKY_BLUE = (95, 165, 228)
 WIDTH = 1280
 HEIGHT = 720
-TITLE = "<You're title here>"       # Decide on a title
+JUMP_VEL = 10
+MAX_JUMPS = 2
+TITLE = "SPIDER-POOL"
 
 
 # TODO: PLayer class
@@ -18,23 +20,39 @@ class Player(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
 
-        self.image = pygame.image.load("./Images/spider-pool.png")
-        self.image = pygame.transform.scale(self.image, (90, 150))
+        self.image = pygame.image.load("Images/spider_pool.png")
+        self.image = pygame.transform.scale(self.image, (120, 196))
 
         self.rect = self.image.get_rect()
-        self.rect.y = HEIGHT - self.image.get_height()
+        self.rect.y = HEIGHT
+
         self.y_vel = 0
+        self.num_jumps = 0
 
     # Movement -> Vertical only
     def update(self):
-        pass
-        # single and double jump
+        """ Move the player"""
+        self.calc_grav()
 
-    def gravity(self):
-        pass
+        self.rect.y += self.y_vel
+
+        if self.rect.bottom >= HEIGHT:
+            self.y_vel = 0
+            self.rect.y = HEIGHT - self.rect.height
+            self.num_jumps = 0
+
+    def calc_grav(self):
+        """ Calculate effect of gravity. """
+        if self.y_vel == 0:
+            self.y_vel = 1
+        else:
+            self.y_vel += .35
 
     def jump(self):
-        pass
+        """ Called when user hits 'jump' button"""
+        if self.num_jumps < MAX_JUMPS:
+            self.y_vel -= JUMP_VEL
+            self.num_jumps += 1
 
 
 # TODO: Enemy class
@@ -44,6 +62,12 @@ class Player(pygame.sprite.Sprite):
 
 
 # TODO: Projectile class
+class Projectile(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+
+        self.image = pygame.image.load("./Images/shuriken.png")
+        self.rect = self.image.get_rect()
 
 
 def main():
@@ -60,11 +84,16 @@ def main():
 
     # Sprite groups
     all_sprites = pygame.sprite.Group()
+    projectile_sprites = pygame.sprite.Group()
 
     # Sprites
     # Player sprite
     player = Player()
     all_sprites.add(player)
+
+    # Player projectiles
+    projectile = Projectile()
+    all_sprites.add(projectile)
 
     # ----- MAIN LOOP
     while not done:
@@ -72,9 +101,14 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 done = True
+
             # TODO: Keyboard / mouse controls
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    player.jump()
 
         # ----- LOGIC
+        all_sprites.update()
 
         # ----- DRAW
         screen.fill(SKY_BLUE)
