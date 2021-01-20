@@ -12,6 +12,9 @@ WIDTH = 1280
 HEIGHT = 720
 JUMP_VEL = 10
 MAX_JUMPS = 2
+PROJECTILE_SPEED = 10
+MAX_PROJECTILES = 5
+MAX_COINS = 50
 TITLE = "SPIDER-POOL"
 
 
@@ -56,18 +59,38 @@ class Player(pygame.sprite.Sprite):
 
 
 # TODO: Enemy class
+# randomly spawning enemies
 
-
-# TODO: Pickups class
-
+# TODO: pickups classes
+# refill ammo
+# collect coins to win
 
 # TODO: Projectile class
 class Projectile(pygame.sprite.Sprite):
-    def __init__(self):
+    def __init__(self, coords):
+        """
+            Arguments:
+                coords - tuple of x,y
+        """
         super().__init__()
 
-        self.image = pygame.image.load("./Images/shuriken.png")
+        self.image = pygame.image.load("Images/Shuriken Animation/shuriken.png")
         self.rect = self.image.get_rect()
+        self.rect.centerx, self.rect.centery = coords
+
+        self.x_vel = PROJECTILE_SPEED
+
+    def update(self):
+        self.rect.x += self.x_vel
+        self.animate()
+
+    # TODO: animate shuriken
+    def animate(self):
+        """ create the animation of the projectile"""
+        if self.image == pygame.image.load("Images/Shuriken Animation/shuriken-2.png"):
+            self.image = pygame.image.load("Images/Shuriken Animation/shuriken.png")
+        elif self.image == pygame.image.load("Images/Shuriken Animation/shuriken.png"):
+            self.image = pygame.image.load("Images/Shuriken Animation/shuriken-2.png")
 
 
 def main():
@@ -91,10 +114,6 @@ def main():
     player = Player()
     all_sprites.add(player)
 
-    # Player projectiles
-    projectile = Projectile()
-    all_sprites.add(projectile)
-
     # ----- MAIN LOOP
     while not done:
         # -- Event Handler
@@ -106,6 +125,11 @@ def main():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
                     player.jump()
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                shuriken = Projectile((player.rect.right, player.rect.centery))
+                all_sprites.add(shuriken)
+                projectile_sprites.add(shuriken)
 
         # ----- LOGIC
         all_sprites.update()
