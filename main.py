@@ -15,12 +15,15 @@ JUMP_VEL = 10
 MAX_JUMPS = 2
 PROJECTILE_SPEED = 10
 MAX_PROJECTILES = 5
-MONEY_GOAL = 50
+MONEY_GOAL = 25
 MONEY_VEL = -5
-MONEY_CHANCE = 1000
-ENEMY_CHANCE = 1250
+MONEY_CHANCE = 1000        # chance to spawn money is 10/var
+ENEMY_CHANCE = 1250        # chance to spawn enemy is 10/var
 ENEMY_VEL = -5
 TITLE = "SPIDER-POOL"
+
+INTRODUCTION = """WELCOME TO SPIDERPOOL"""
+DESCRIPTION = """COLLECT 25 MONEY TO WIN"""
 
 
 class Player(pygame.sprite.Sprite):
@@ -61,7 +64,6 @@ class Player(pygame.sprite.Sprite):
             self.num_jumps += 1
 
 
-# randomly spawning enemies
 class Enemy(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
@@ -75,9 +77,11 @@ class Enemy(pygame.sprite.Sprite):
 
     def update(self):
         self.rect.x += self.x_vel
+        
+        if self.rect.right <= 0:
+            self.kill()
 
 
-# collect money to win
 class Money(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
@@ -140,7 +144,6 @@ class Money(pygame.sprite.Sprite):
         self.animation_frame += 1
 
 
-# create shuriken projectiles
 class Projectile(pygame.sprite.Sprite):
     def __init__(self, coords):
         """
@@ -176,6 +179,22 @@ class Projectile(pygame.sprite.Sprite):
             self.image = self.animation[1]
 
         self.animation_frame += 1
+   
+   
+def write_text(text, coords, font_size, surface, font_style="arial", bold=False, italic=False):
+    """
+    Arguments:
+        text - string of text to blit
+        coords - tuple of x y coordinates
+        font_size - size of font
+        surface - surface to blit onto
+        font_style - text font
+        bold - if text is bold, default False
+        italic - if text is italic, default False
+    """
+    font = pygame.font.SysFont(font_style, font_size, bold, italic)
+    text_surface = font.render(text, False, WHITE)
+    surface.blit(text_surface, coords)
 
 
 def main():
@@ -185,14 +204,18 @@ def main():
     size = (WIDTH, HEIGHT)
     screen = pygame.display.set_mode(size)
     pygame.display.set_caption(TITLE)
+    background = pygame.image.load("Images/background.png")
+    
+    money_image = pygame.image.load("Images/Money Animation/flyingMoney-1.png")
+    money_image = pygame.transform.scale(money_image, (100, 91))
+    
+    shuriken_image = pygame.image.load("Images/Shuriken Animation/shuriken.png")
 
     # ----- LOCAL VARIABLES
     done = False
     clock = pygame.time.Clock()
     money_count = 0
-
-    # text = pygame.font.SysFont("arial", True)
-    # write = "jbafbjkaf"
+    introduction = True
 
     # Sprite groups
     all_sprites = pygame.sprite.Group()
@@ -269,21 +292,32 @@ def main():
         # TODO: secondary loss option if too many enemies get past player
 
         # ----- DRAW
-        screen.fill(SKY_BLUE)
+        if introduction == True:        # run the introduction
+            screen.fill(SKY_BLUE)
+            write_text(INTRODUCTION, (75, 285), 75, screen, bold=True)
+            write_text(DESCRIPTION, (150, 400), 25, screen)
+            
+            pygame.display.flip()
+            clock.tick(60)
+            
+            pygame.time.delay(5000)
+            introduction = False
+        
+        screen.blit(background, (0, 0))
+        
+        write_text(str(money_count), (145, 100), 50, screen)
+        screen.blit(money_image, (45, 75))
+        
+        write_text(str(6 - len(projectile_sprites)), (600, 40), 50, screen)
+        screen.blit(shuriken_image, (550, 50))
+        
         all_sprites.draw(screen)
-
-        # img = text.render(write, True, BLACK)
-        # screen.blit(img, (100, 100))
-
-        # TODO: counter for money
-        # TODO: counter for ammo
 
         # TODO: Win screen
         # TODO: Lose screen
 
         # TODO: Title screen (optional)
-        # TODO: Background (optional)
-
+        
         # ----- UPDATE
         pygame.display.flip()
         clock.tick(60)
