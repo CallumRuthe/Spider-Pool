@@ -233,7 +233,6 @@ def main():
         # ----- LOGIC
         all_sprites.update()
 
-
         # spawn money
         money_spawn_chance = random.randrange(0, MONEY_CHANCE)
         if money_spawn_chance < 10:
