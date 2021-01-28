@@ -4,6 +4,9 @@
 import pygame
 import random
 # TODO: Play testing / debugging
+# TODO: try and increase difficulty
+# TODO: Organize white space / check for proper layout / find places to factor out code
+# TODO: Add enemies killed counter on right building & add to stats at end
 # ----- CONSTANTS
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
@@ -16,9 +19,10 @@ HEIGHT = 720
 JUMP_VEL = 10
 MAX_JUMPS = 2
 PROJECTILE_SPEED = 10
-MAX_PROJECTILES = 5
+MAX_PROJECTILES = 3
 MONEY_GOAL = 25
-MONEY_VEL = -5
+MONEY_X_VEL = -5
+MAX_MONEY_Y_VEL = 10
 MONEY_CHANCE = 1000        # chance to spawn money is 10/var
 ENEMY_CHANCE = 1250        # chance to spawn enemy is 10/var
 ENEMY_VEL = -5
@@ -118,11 +122,25 @@ class Money(pygame.sprite.Sprite):
         self.rect.x = WIDTH + 10
         self.rect.y = random.randrange(0, HEIGHT - self.rect.height)
 
-        self.x_vel = MONEY_VEL
+        self.x_vel = MONEY_X_VEL
+        self.y_vel = MAX_MONEY_Y_VEL
+        self.direction_down = True
 
     def update(self):
         self.animate()
         self.rect.x += self.x_vel
+        self.rect.y += self.y_vel
+        print(self.direction_down)
+
+        if self.y_vel == MAX_MONEY_Y_VEL:
+            self.direction_down = True
+        elif self.y_vel == -MAX_MONEY_Y_VEL:
+            self.direction_down = False
+
+        if self.direction_down:
+            self.y_vel -= 1
+        if not self.direction_down:
+            self.y_vel += 1
 
         if self.rect.right <= 0:
             self.kill()
@@ -276,7 +294,7 @@ def main():
                     player.jump()
 
             # player shoot on mouse click
-            if event.type == pygame.MOUSEBUTTONDOWN and len(projectile_sprites) <= 5:
+            if event.type == pygame.MOUSEBUTTONDOWN and len(projectile_sprites) < MAX_PROJECTILES:
                 shuriken = Projectile((player.rect.right, player.rect.centery))
                 all_sprites.add(shuriken)
                 projectile_sprites.add(shuriken)
@@ -299,7 +317,7 @@ def main():
             # spawn money
             money_spawn_chance = random.randrange(0, MONEY_CHANCE)
             if money_spawn_chance < 10:
-                money = Money()
+                money: Money = Money()
                 all_sprites.add(money)
                 money_sprites.add(money)
 
@@ -413,7 +431,7 @@ def main():
             write_text(str(money_count), (145, 100), 50, screen)
             screen.blit(money_image, (45, 75))
 
-            write_text(str(6 - len(projectile_sprites)), (600, 40), 50, screen)
+            write_text(str(MAX_PROJECTILES - len(projectile_sprites)), (600, 40), 50, screen)
             screen.blit(shuriken_image, (550, 50))
 
             all_sprites.draw(screen)
