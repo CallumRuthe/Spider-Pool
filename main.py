@@ -3,10 +3,9 @@
 
 import pygame
 import random
+from sys import platform
 # TODO: Play testing / debugging
-# TODO: try and increase difficulty
-# TODO: Organize white space / check for proper layout / find places to factor out code
-# TODO: Add enemies killed counter on right building & add to stats at end
+
 # ----- CONSTANTS
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
@@ -23,8 +22,9 @@ MAX_PROJECTILES = 3
 MONEY_GOAL = 25
 MONEY_X_VEL = -5
 MAX_MONEY_Y_VEL = 10
-MONEY_CHANCE = 1000        # chance to spawn money is 10/var
+MONEY_CHANCE = 1250        # chance to spawn money is 10/var
 ENEMY_CHANCE = 1250        # chance to spawn enemy is 10/var
+TELEPORT_CHANCE = 1000   # chance for enemy to teleport is 10/var
 ENEMY_VEL = -5
 MAX_ENEMIES_PAST = 3           # max number of enemies that can pass the player before losing
 TITLE = "SPIDER-POOL"
@@ -33,6 +33,7 @@ INTRODUCTION = """WELCOME TO SPIDERPOOL"""
 INSTRUCTIONS = """COLLECT MONEY WHILE AVOIDING POLVERINE"""
 GOAL = """GATHER 25 MONEY BEFORE POLVERINE GETS YOU"""
 GOAL_2 = f"""BE WARNED: IF {MAX_ENEMIES_PAST} POLVERINE GET PAST YOU LOSE"""
+CONTROLS = """CONTROLS: SPACE  TO JUMP, MOUSE CLICk TO SHOOT"""
 BEGIN = """CLICK TO BEGIN"""
 
 WIN = """YOU WIN!!!"""
@@ -93,9 +94,19 @@ class Enemy(pygame.sprite.Sprite):
 
     def update(self):
         self.rect.x += self.x_vel
-        
+        self.teleport()
+
         if self.rect.right <= 0:
             self.kill()
+
+    def teleport(self):
+        teleport_chance = random.randrange(0, TELEPORT_CHANCE)
+        if teleport_chance <= 10:
+            if self.rect.x > WIDTH // 3:
+                if self.rect.centery > HEIGHT // 2:
+                    self.rect.centery = (HEIGHT - self.rect.centery)
+                elif self.rect.centery < HEIGHT // 2:
+                    self.rect.centery = HEIGHT - self.rect.centery
 
 
 class Money(pygame.sprite.Sprite):
@@ -130,7 +141,6 @@ class Money(pygame.sprite.Sprite):
         self.animate()
         self.rect.x += self.x_vel
         self.rect.y += self.y_vel
-        print(self.direction_down)
 
         if self.y_vel == MAX_MONEY_Y_VEL:
             self.direction_down = True
@@ -211,7 +221,7 @@ class Projectile(pygame.sprite.Sprite):
         self.animation_frame += 1
    
    
-def write_text(text, coords, font_size, surface, font_style="arial", bold=False, italic=False):
+def write_text(text, coords, font_size, surface, font_style="sans serif", bold=False, italic=False, colour=WHITE):
     """
     Arguments:
         text - string of text to blit
@@ -221,9 +231,10 @@ def write_text(text, coords, font_size, surface, font_style="arial", bold=False,
         font_style - text font
         bold - if text is bold, default False
         italic - if text is italic, default False
+        colour - colour of text
     """
     font = pygame.font.SysFont(font_style, font_size, bold, italic)
-    text_surface = font.render(text, False, WHITE)
+    text_surface = font.render(text, False, colour)
     surface.blit(text_surface, coords)
     # print(font.size(text))
 
@@ -252,6 +263,7 @@ def main():
     clock = pygame.time.Clock()
     money_count = 0
     enemies_past = 0
+    enemies_killed = 0
     introduction = True
     win = False
     lose = False
@@ -334,6 +346,7 @@ def main():
             enemy_hit = pygame.sprite.spritecollide(shuriken, enemy_sprites, True)
             if len(enemy_hit) > 0:
                 shuriken.kill()
+                enemies_killed += 1
 
         # enemy hits player
         for enemy in enemy_sprites:
@@ -353,88 +366,181 @@ def main():
                 enemies_past += 1
 
         # update stats when money is collected
-        stats = f"""YOU COLLECTED {money_count}/{MONEY_GOAL} money"""
+        stats = f"""YOU COLLECTED {money_count}/{MONEY_GOAL} MONEY"""
+        stats_2 = f"""YOU  KILLED {enemies_killed} ENEMIES"""
 
         # ----- DRAW
-        if introduction:        # run the introduction
-            screen.fill(SKY_BLUE)
+        if platform == "win32":
+            if introduction:        # run the introduction
+                screen.fill(SKY_BLUE)
 
-            # Text
-            write_text(INTRODUCTION, (218, 100), 75, screen, bold=True)
-            write_text(INSTRUCTIONS, (171, 287), 50, screen)
-            write_text(GOAL, (126, 395), 50, screen)
-            write_text(GOAL_2, (136, 503), 50, screen)
-            write_text(BEGIN, (556, 611), 25, screen, italic=True)
+                # Text
+                write_text(INTRODUCTION, (218, 100), 75, screen, bold=True, colour=RED, font_style="arial")
+                write_text(INSTRUCTIONS, (171, 287), 50, screen, font_style="arial")
+                write_text(GOAL, (126, 395), 50, screen, font_style="arial")
+                write_text(GOAL_2, (136, 503), 50, screen, font_style="arial")
+                write_text(BEGIN, (556, 611), 25, screen, italic=True, font_style="arial")
 
-            # Characters
-            screen.blit(spiderpool_image, (50, 50))
-            screen.blit(polverine_image, (WIDTH - (50 + polverine_image.get_width()), 50))
+                # Characters
+                screen.blit(spiderpool_image, (50, 50))
+                screen.blit(polverine_image, (WIDTH - (50 + polverine_image.get_width()), 50))
 
-            pygame.display.flip()
-            clock.tick(60)
+                pygame.display.flip()
+                clock.tick(60)
 
-        elif win:
-            for sprite in all_sprites:
-                sprite.kill()
-            screen.fill(GREEN)
+            elif win:
+                for sprite in all_sprites:
+                    sprite.kill()
+                screen.fill(GREEN)
 
-            # text
-            write_text(WIN, (419, 100), 100, screen, bold=True)
-            write_text(stats, (353, 315), 50, screen)
-            write_text(EXIT, (512, 473), 25, screen, italic=True)
+                # text
+                write_text(WIN, (419, 100), 100, screen, bold=True, font_style="arial")
+                write_text(stats, (353, 315), 50, screen, font_style="arial")
+                write_text(EXIT, (512, 473), 25, screen, italic=True, font_style="arial")
 
-            # --images
-            # left side
-            for i in range(3):
-                x = random.randrange(0, 253)
-                y = random.randrange(0, HEIGHT - 91)
-                screen.blit(pygame.transform.flip(money_image, True, False), (x, y))
+                # --images
+                # left side
+                for i in range(3):
+                    x = random.randrange(0, 253)
+                    y = random.randrange(0, HEIGHT - 91)
+                    screen.blit(pygame.transform.flip(money_image, True, False), (x, y))
 
-            # right side
-            for i in range(3):
-                x = random.randrange(926, WIDTH - 100)
-                y = random.randrange(0, HEIGHT - 91)
-                screen.blit(money_image, (x, y))
+                # right side
+                for i in range(3):
+                    x = random.randrange(926, WIDTH - 100)
+                    y = random.randrange(0, HEIGHT - 91)
+                    screen.blit(money_image, (x, y))
 
-        elif lose:
-            for sprite in all_sprites:
-                sprite.kill()
-            screen.fill(RED)
+            elif lose:
+                for sprite in all_sprites:
+                    sprite.kill()
+                screen.fill(RED)
 
-            # text
-            write_text(LOSE, (419, 100), 100, screen, bold=True)
-            write_text(stats, (353, 423), 50, screen)
-            write_text(EXIT, (512, 581), 25, screen, italic=True)
+                # text
+                write_text(LOSE, (419, 100), 100, screen, bold=True, font_style="arial")
+                write_text(stats, (353, 423), 50, screen, font_style="arial")
+                write_text(EXIT, (512, 581), 25, screen, italic=True, font_style="arial")
 
-            if lose_type == 1:
-                write_text(LOSE_HIT, (355, 315), 50, screen)
+                if lose_type == 1:
+                    write_text(LOSE_HIT, (355, 315), 50, screen, font_style="arial")
 
-            elif lose_type == 2:
-                write_text(LOSE_PASSED, (235, 315), 50, screen)
+                elif lose_type == 2:
+                    write_text(LOSE_PASSED, (235, 315), 50, screen, font_style="arial")
 
-            # --images
-            # left side
-            for i in range(3):
-                x = random.randrange(0, 92)
-                y = random.randrange(0, HEIGHT - 161)
-                screen.blit(pygame.transform.flip(polverine_image, True, False), (x, y))
+                # --images
+                # left side
+                for i in range(3):
+                    x = random.randrange(0, 92)
+                    y = random.randrange(0, HEIGHT - 161)
+                    screen.blit(pygame.transform.flip(polverine_image, True, False), (x, y))
 
-            # right side
-            for i in range(3):
-                x = random.randrange(1044, WIDTH - 161)
-                y = random.randrange(0, HEIGHT - 161)
-                screen.blit(polverine_image, (x, y))
+                # right side
+                for i in range(3):
+                    x = random.randrange(1044, WIDTH - 161)
+                    y = random.randrange(0, HEIGHT - 161)
+                    screen.blit(polverine_image, (x, y))
+
+            else:
+                screen.blit(background, (0, 0))
+
+                write_text(str(money_count), (145, 100), 50, screen, font_style="arial")
+                screen.blit(money_image, (45, 75))
+
+                write_text(str(MAX_PROJECTILES - len(projectile_sprites)), (600, 40), 50, screen, font_style="arial")
+                screen.blit(shuriken_image, (550, 50))
+
+                all_sprites.draw(screen)
+        # TODO: update changes for windows OS (enemies killed counter and stats and controls info)
+        elif platform == "darwin":
+            if introduction:        # run the introduction
+                screen.fill(SKY_BLUE)
+
+                # Text
+                write_text(INTRODUCTION, (236, 100), 75, screen, bold=True, colour=RED)
+                write_text(INSTRUCTIONS, (238, 251), 50, screen)
+                write_text(GOAL, (203, 335), 50, screen)
+                write_text(GOAL_2, (210, 419), 50, screen)
+                write_text(CONTROLS, (170, 503), 50, screen)
+                write_text(BEGIN, (569, 637), 25, screen, italic=True)
+
+                # Characters
+                screen.blit(spiderpool_image, (50, 50))
+                screen.blit(polverine_image, (WIDTH - (50 + polverine_image.get_width()), 50))
+
+                pygame.display.flip()
+                clock.tick(60)
+
+            elif win:
+                for sprite in all_sprites:
+                    sprite.kill()
+                screen.fill(GREEN)
+
+                # text
+                write_text(WIN, (424, 100), 100, screen, bold=True)
+                write_text(stats, (395, 268), 50, screen)
+                write_text(stats_2, (434, 352), 50, screen)
+                write_text(EXIT, (535, 468), 25, screen, italic=True)
+
+                # --images
+                # left side
+                for i in range(3):
+                    x = random.randrange(0, 295)
+                    y = random.randrange(0, HEIGHT - 91)
+                    screen.blit(pygame.transform.flip(money_image, True, False), (x, y))
+
+                # right side
+                for i in range(3):
+                    x = random.randrange(885, WIDTH - 100)
+                    y = random.randrange(0, HEIGHT - 91)
+                    screen.blit(money_image, (x, y))
+
+            elif lose:
+                for sprite in all_sprites:
+                    sprite.kill()
+                screen.fill(RED)
+
+                # text
+                write_text(LOSE, (440, 100), 100, screen, bold=True)
+                write_text(stats, (395, 352), 50, screen)
+                write_text(stats_2, (434, 436), 50, screen)
+                write_text(EXIT, (535, 570), 25, screen, italic=True)
+
+                if lose_type == 1:
+                    write_text(LOSE_HIT, (397, 268), 50, screen)
+
+                elif lose_type == 2:
+                    write_text(LOSE_PASSED, (293, 268), 50, screen)
+
+                # --images
+                # left side
+                for i in range(3):
+                    x = random.randrange(0, 132)
+                    y = random.randrange(0, HEIGHT - 161)
+                    screen.blit(pygame.transform.flip(polverine_image, True, False), (x, y))
+
+                # right side
+                for i in range(3):
+                    x = random.randrange(987, WIDTH - 161)
+                    y = random.randrange(0, HEIGHT - 161)
+                    screen.blit(polverine_image, (x, y))
+
+            else:
+                screen.blit(background, (0, 0))
+
+                write_text(str(money_count), (155, 110), 50, screen)
+                screen.blit(money_image, (45, 75))
+
+                write_text(str(MAX_PROJECTILES - len(projectile_sprites)), (600, 50), 50, screen)
+                screen.blit(shuriken_image, (550, 50))
+
+                write_text(str(enemies_killed), (1200, 75), 50, screen)
+                screen.blit(pygame.transform.scale(polverine_image, (69, 69)), (1100, 50))
+
+                all_sprites.draw(screen)
 
         else:
-            screen.blit(background, (0, 0))
-
-            write_text(str(money_count), (145, 100), 50, screen)
-            screen.blit(money_image, (45, 75))
-
-            write_text(str(MAX_PROJECTILES - len(projectile_sprites)), (600, 40), 50, screen)
-            screen.blit(shuriken_image, (550, 50))
-
-            all_sprites.draw(screen)
+            print("Incompatible OS")
+            done = True
         
         # ----- UPDATE
         pygame.display.flip()
