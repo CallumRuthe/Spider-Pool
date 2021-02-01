@@ -4,7 +4,6 @@
 import pygame
 import random
 from sys import platform
-# TODO: Play testing / debugging
 
 # ----- CONSTANTS
 BLACK = (0, 0, 0)
@@ -376,10 +375,11 @@ def main():
 
                 # Text
                 write_text(INTRODUCTION, (218, 100), 75, screen, bold=True, colour=RED, font_style="arial")
-                write_text(INSTRUCTIONS, (171, 287), 50, screen, font_style="arial")
-                write_text(GOAL, (126, 395), 50, screen, font_style="arial")
-                write_text(GOAL_2, (136, 503), 50, screen, font_style="arial")
-                write_text(BEGIN, (556, 611), 25, screen, italic=True, font_style="arial")
+                write_text(INSTRUCTIONS, (171, 237), 50, screen, font_style="arial")
+                write_text(GOAL, (126, 345), 50, screen, font_style="arial")
+                write_text(GOAL_2, (136, 453), 50, screen, font_style="arial")
+                write_text(CONTROLS, (89, 561), 50, screen, font_style="arial")
+                write_text(BEGIN, (556, 644), 25, screen, italic=True, font_style="arial")
 
                 # Characters
                 screen.blit(spiderpool_image, (50, 50))
@@ -396,7 +396,8 @@ def main():
                 # text
                 write_text(WIN, (419, 100), 100, screen, bold=True, font_style="arial")
                 write_text(stats, (353, 315), 50, screen, font_style="arial")
-                write_text(EXIT, (512, 473), 25, screen, italic=True, font_style="arial")
+                write_text(stats_2, (400, 423), 50, screen, font_style="arial")
+                write_text(EXIT, (512, 581), 25, screen, italic=True, font_style="arial")
 
                 # --images
                 # left side
@@ -419,7 +420,8 @@ def main():
                 # text
                 write_text(LOSE, (419, 100), 100, screen, bold=True, font_style="arial")
                 write_text(stats, (353, 423), 50, screen, font_style="arial")
-                write_text(EXIT, (512, 581), 25, screen, italic=True, font_style="arial")
+                write_text(stats_2, (400, 531), 50, screen, font_style="arial")
+                write_text(EXIT, (512, 639), 25, screen, italic=True, font_style="arial")
 
                 if lose_type == 1:
                     write_text(LOSE_HIT, (355, 315), 50, screen, font_style="arial")
@@ -449,8 +451,11 @@ def main():
                 write_text(str(MAX_PROJECTILES - len(projectile_sprites)), (600, 40), 50, screen, font_style="arial")
                 screen.blit(shuriken_image, (550, 50))
 
+                write_text(str(enemies_killed), (1200, 65), 50, screen, font_style="arial")
+                screen.blit(pygame.transform.scale(polverine_image, (69, 69)), (1100, 50))
+
                 all_sprites.draw(screen)
-        # TODO: update changes for windows OS (enemies killed counter and stats and controls info)
+
         elif platform == "darwin":
             if introduction:        # run the introduction
                 screen.fill(SKY_BLUE)
