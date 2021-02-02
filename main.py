@@ -24,13 +24,13 @@ MAX_MONEY_Y_VEL = 10
 MONEY_CHANCE = 1250        # chance to spawn money is 10/var
 ENEMY_CHANCE = 1250        # chance to spawn enemy is 10/var
 TELEPORT_CHANCE = 1000   # chance for enemy to teleport is 10/var
-ENEMY_VEL = -5
+ENEMY_VEL = -7
 MAX_ENEMIES_PAST = 3           # max number of enemies that can pass the player before losing
 TITLE = "SPIDER-POOL"
 
 INTRODUCTION = """WELCOME TO SPIDERPOOL"""
 INSTRUCTIONS = """COLLECT MONEY WHILE AVOIDING POLVERINE"""
-GOAL = """GATHER 25 MONEY BEFORE POLVERINE GETS YOU"""
+GOAL = f"""GATHER {MONEY_GOAL} MONEY BEFORE POLVERINE GETS YOU"""
 GOAL_2 = f"""BE WARNED: IF {MAX_ENEMIES_PAST} POLVERINE GET PAST YOU LOSE"""
 CONTROLS = """CONTROLS: SPACE  TO JUMP, MOUSE CLICk TO SHOOT"""
 BEGIN = """CLICK TO BEGIN"""
@@ -40,6 +40,13 @@ LOSE = """YOU LOSE"""
 LOSE_HIT = """YOU GOT HIT BY POLVERINE"""
 LOSE_PASSED = """YOU LET TOO MANY ENEMIES PASS YOU"""
 EXIT = """PRESS ESCAPE TO QUIT"""
+
+MONEY_SOUND = "./Sounds/money.wav"
+JUMP_SOUND = "./Sounds/jump.wav"
+WIN_SOUND = "./Sounds/win.wav"
+LOSE_SOUND = "./Sounds/lose.wav"
+SHURIKEN_SOUND = "./Sounds/shuriken.wav"
+BACKGROUND_MUSIC = "./Sounds/background_music.mp3"
 
 
 class Player(pygame.sprite.Sprite):
@@ -54,6 +61,8 @@ class Player(pygame.sprite.Sprite):
 
         self.y_vel = 0
         self.num_jumps = 0
+
+        self.jump_snd = pygame.mixer.Sound(JUMP_SOUND)
 
     def update(self):
         """ Move the player"""
@@ -78,6 +87,7 @@ class Player(pygame.sprite.Sprite):
         if self.num_jumps < MAX_JUMPS:
             self.y_vel -= JUMP_VEL
             self.num_jumps += 1
+            self.jump_snd.play()
 
 
 class Enemy(pygame.sprite.Sprite):
@@ -261,6 +271,7 @@ def main():
     done = False
     clock = pygame.time.Clock()
     money_count = 0
+    money_stat = 0
     enemies_past = 0
     enemies_killed = 0
     introduction = True
@@ -280,6 +291,13 @@ def main():
     player = Player()
     all_sprites.add(player)
     player_sprite.add(player)
+
+    # sound
+    money_snd = pygame.mixer.Sound(MONEY_SOUND)
+    shuriken_snd = pygame.mixer.Sound(SHURIKEN_SOUND)
+    win_snd = pygame.mixer.Sound(WIN_SOUND)
+    lose_snd = pygame.mixer.Sound(LOSE_SOUND)
+    background_snd = pygame.mixer.Sound(BACKGROUND_MUSIC)
 
     # ----- MAIN LOOP
     while not done:
@@ -309,16 +327,28 @@ def main():
                 shuriken = Projectile((player.rect.right, player.rect.centery))
                 all_sprites.add(shuriken)
                 projectile_sprites.add(shuriken)
+                shuriken_snd.play()
+
+        if background_snd.get_num_channels() < 1:
+            background_snd.play()
 
         # WIN condition: reached coin goal
         if money_count >= MONEY_GOAL:
             win = True
+
+            money_count = 0
+            win_snd.play()
+
             # print("you win")
 
         # LOSE condition: too many polverine pass spiderpool
         if enemies_past >= MAX_ENEMIES_PAST:
             lose = True
             lose_type = 2
+
+            enemies_past = 0
+            lose_snd.play()
+
             # print("you lose (pass)")
 
         # ----- LOGIC
@@ -353,19 +383,24 @@ def main():
             if len(player_hit) > 0:
                 lose = True
                 lose_type = 1
+
+                lose_snd.play()
+
                 # print("you lose (hit)")
 
         # player collects money
         money_hit = pygame.sprite.spritecollide(player, money_sprites, True)
         for money in money_hit:
             money_count += 1
+            money_stat = money_count
+            money_snd.play()
 
         for enemy in enemy_sprites:
             if enemy.rect.right <= 5:
                 enemies_past += 1
 
         # update stats when money is collected
-        stats = f"""YOU COLLECTED {money_count}/{MONEY_GOAL} MONEY"""
+        stats = f"""YOU COLLECTED {money_stat}/{MONEY_GOAL} MONEY"""
         stats_2 = f"""YOU  KILLED {enemies_killed} ENEMIES"""
 
         # ----- DRAW
